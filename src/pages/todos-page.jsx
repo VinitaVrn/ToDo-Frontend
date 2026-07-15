@@ -3,9 +3,8 @@ import { getTodos, deleteTodo } from "../services/api";
 import Navbar from "../components/navbar";
 import TodoCard from "../components/todoCard";
 import CreateTodoForm from "../components/CreateTodoForm";
+import { TODO_STATUSES,PAGE_SIZE } from "../types/todo-constant";
 
-const STATUSES = ["all", "todo", "in_progress", "blocked", "done", "cancelled"];
-const PAGE_SIZE = 6;
 
 export default function TodosPage() {
   const [todos, setTodos] = useState([]);
@@ -20,7 +19,7 @@ export default function TodosPage() {
     setLoading(true);
     try {
       const params = { isArchived: false };
-      if (activeStatus !== "all") params.status = activeStatus;
+      if (activeStatus !== "all") params.status = acTODO_TYPEStiveStatus;
       if (priority) params.priority = priority;
       if (search) params.search = search;
       const res = await getTodos(params);
@@ -109,7 +108,7 @@ export default function TodosPage() {
 
             {/* Status tabs */}
             <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1">
-              {STATUSES.map((s) => (
+              {TODO_STATUSES.map((s) => (
                 <button
                   key={s}
                   onClick={() => {
