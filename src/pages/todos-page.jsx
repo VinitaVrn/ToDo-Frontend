@@ -123,16 +123,7 @@ export default function TodosPage() {
                 <option value="high">High</option>
                 <option value="critical">Critical</option>
               </select>
-              <select
-                className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-violet-400"
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-              >
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
-                <option value="updated">Last updated</option>
-                <option value="due">Due date</option>
-              </select>
+              
             </div>
 
             {/* Status tabs */}
