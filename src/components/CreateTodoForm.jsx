@@ -7,11 +7,11 @@ import {
   TODO_TYPES,
 } from "../types/todo-constant";
 import { buildTodoPayload } from "../utils/todo-payload";
+import { toast } from "react-toastify";
 
 export default function CreateTodotodo({ onSave }) {
   const [todo, setTodo] = useState(EMPTY_TODO);
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const updateField = (key, value) =>
     setTodo((prev) => ({
@@ -26,24 +26,35 @@ export default function CreateTodotodo({ onSave }) {
   };
 
   const handleSubmit = async () => {
-    if (!todo.title.trim()) return;
+    if (!todo.title.trim()) {
+      toast.error("Title is required.");
+      return;
+    }
     setLoading(true);
     try {
-      await createTodo(buildTodoPayload(todo));
+      const res = await createTodo(buildTodoPayload(todo));
+
+      toast.success(res.data.message || "Todo created successfully.");
+
       setTodo({
         ...EMPTY_TODO,
         items: [...EMPTY_TODO.items],
       });
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 2000);
+
       onSave?.();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
+  const today = new Date();
+  today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+
+  const minDate = today.toISOString().split("T")[0];
 
   return (
-    <div className="w-full bg-white border border-gray-200 rounded-2xl p-6 flex flex-col gap-5 shadow-sm">
+    <div className="w-full bg-white border border-gray-300 rounded-2xl p-6 flex flex-col gap-5 shadow-sm">
       <h2 className="text-base font-semibold text-gray-800">Create New Todo</h2>
 
       {/* Title */}
@@ -106,7 +117,7 @@ export default function CreateTodotodo({ onSave }) {
             Tags
           </label>
           <input
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400 transition-colors placeholder-gray-300"
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400 transition-colors placeholder-gray-400"
             placeholder="backend, urgent"
             value={todo.tags}
             onChange={(e) => updateField("tags", e.target.value)}
@@ -118,6 +129,7 @@ export default function CreateTodotodo({ onSave }) {
           </label>
           <input
             type="date"
+            min={minDate}
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400 transition-colors text-gray-800"
             value={todo.dueDate}
             onChange={(e) => updateField("dueDate", e.target.value)}
@@ -142,15 +154,16 @@ export default function CreateTodotodo({ onSave }) {
                 />
                 {todo.items.length > 1 && (
                   <button
+                    type="button"
                     onClick={() =>
                       updateField(
                         "items",
                         todo.items.filter((_, idx) => idx !== i)
                       )
                     }
-                    className="text-gray-300 hover:text-red-400 text-xl leading-none"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition"
                   >
-                    &times;
+                    ✕
                   </button>
                 )}
               </div>
@@ -170,7 +183,7 @@ export default function CreateTodotodo({ onSave }) {
         disabled={loading || !todo.title.trim()}
         className="w-full py-3 text-sm font-semibold bg-violet-600 hover:bg-violet-700 text-white rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-1"
       >
-        {loading ? "Saving..." : success ? "✓ Saved!" : "Save Todo"}
+        {loading ? "Saving..." : "Save Todo"}
       </button>
     </div>
   );

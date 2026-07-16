@@ -3,44 +3,73 @@ import { getTodos, deleteTodo } from "../services/api";
 import Navbar from "../components/navbar";
 import TodoCard from "../components/todoCard";
 import CreateTodoForm from "../components/CreateTodoForm";
-import { TODO_STATUSES,PAGE_SIZE } from "../types/todo-constant";
+import { TODO_STATUSES, PAGE_SIZE } from "../types/todo-constant";
+import { toast } from "react-toastify";
+import { getErrorMessage } from "../utils/error-message";
 
+const statusTabs = ["all", ...TODO_STATUSES];
 
 export default function TodosPage() {
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+
   const [activeStatus, setActiveStatus] = useState("all");
   const [priority, setPriority] = useState("");
   const [sort, setSort] = useState("newest");
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const fetchTodos = useCallback(async () => {
     setLoading(true);
     try {
       const params = { isArchived: false };
-      if (activeStatus !== "all") params.status = acTODO_TYPEStiveStatus;
+      if (activeStatus !== "all") params.status = activeStatus;
       if (priority) params.priority = priority;
-      if (search) params.search = search;
+      if (debouncedSearch) {
+        params.search = debouncedSearch;
+      }
       const res = await getTodos(params);
       setTodos(res.data.data?.todos || res.data.data || []);
       setPage(1);
-    } catch (err) {
-      console.error(err);
-    } finally {
+    }catch (err) {
+  toast.error(
+    err.response?.data?.message || "Failed to fetch todos."
+  );
+} finally {
       setLoading(false);
     }
-  }, [activeStatus, priority, search]);
+  }, [activeStatus, priority, debouncedSearch]);
 
   useEffect(() => {
     fetchTodos();
   }, [fetchTodos]);
 
-  const handleDelete = async (id) => {
-    if (!confirm("Delete this todo?")) return;
-    await deleteTodo(id);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+ const handleDelete = async (id) => {
+  if (!confirm("Delete this todo?")) return;
+
+  try {
+    const res = await deleteTodo(id);
+
+    toast.success(
+      res.data.message || "Todo deleted successfully."
+    );
+
     fetchTodos();
-  };
+  } catch (err) {
+    toast.error(
+      err.response?.data?.message || "Failed to delete todo."
+    );
+  }
+};
 
   // Sort client-side
   const sorted = [...todos].sort((a, b) => {
@@ -74,11 +103,11 @@ export default function TodosPage() {
           </div>
 
           {/* Right — Todo list */}
-         <div className="col-span-6">
+          <div className="col-span-6">
             {/* Filters row */}
             <div className="flex gap-2 mb-3 flex-wrap">
               <input
-                className="flex-1 min-w-40 bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-violet-400 transition-colors"
+                className="flex-1 min-w-60 bg-white border border-gray-600 rounded-xl px-6 py-4 text-md text-gray-900 placeholder-gray-600 focus:outline-none focus:border-violet-600 transition-colors"
                 placeholder="Search todos..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -108,26 +137,26 @@ export default function TodosPage() {
 
             {/* Status tabs */}
             <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1">
-              {TODO_STATUSES.map((s) => (
+              {statusTabs.map((s) => (
                 <button
                   key={s}
                   onClick={() => {
                     setActiveStatus(s);
                     setPage(1);
                   }}
-                  className={`flex-shrink-0 text-xs px-3 py-1.5 rounded-lg font-medium capitalize transition-colors whitespace-nowrap
+                  className={`flex-shrink-0 text-md px-5 py-3 rounded-lg font-medium capitalize transition-colors whitespace-nowrap
                   ${
                     activeStatus === s
-                      ? "bg-violet-600 text-white"
-                      : "bg-white border border-gray-200 text-gray-500 hover:border-violet-300 hover:text-violet-600"
+                      ? "bg-violet-700 text-white"
+                      : "bg-white border border-gray-400 text-gray-800 hover:border-violet-400 hover:text-violet-600"
                   }`}
                 >
                   {s.replace("_", " ")}
-                  {s !== "all" && (
-                    <span className="ml-1 opacity-60">
-                      {todos.filter((t) => t.status === s).length}
-                    </span>
-                  )}
+                  <span className="ml-1 opacity-60">
+                    {s === "all"
+                      ? todos.length
+                      : todos.filter((t) => t.status === s).length}
+                  </span>
                 </button>
               ))}
             </div>
@@ -148,7 +177,7 @@ export default function TodosPage() {
                 <p className="text-sm text-gray-500">No todos found</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {paginated.map((todo) => (
                   <TodoCard key={todo.id} todo={todo} onDelete={handleDelete} />
                 ))}

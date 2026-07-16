@@ -2,7 +2,7 @@ export const EMPTY_TODO = {
   title: "",
   description: "",
   type: "task",
-  status: "todo",
+  status: "in_progress",
   priority: "medium",
   tags: "",
   dueDate: "",
